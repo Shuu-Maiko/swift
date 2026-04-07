@@ -26,14 +26,15 @@ class FileSender extends Peer {
   public void start() {
     try {
       s = new Socket(ip, port);
+      long start = System.nanoTime();
+
       DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-      
       String fileName = FileManager.getFileName(filePath);
       long fileSize = FileManager.getFileSize(filePath);
-      
+
       dos.writeUTF(fileName);
       dos.writeLong(fileSize);
-      
+
       try (FileInputStream fis = FileManager.getInputStream(filePath)) {
         byte[] buffer = new byte[4096];
         int bytesRead;
@@ -41,6 +42,9 @@ class FileSender extends Peer {
           dos.write(buffer, 0, bytesRead);
         }
       }
+      long end = System.nanoTime();
+      long duration = (end - start);
+      System.out.println("file send in : " + duration / 1000000 + "ms");
       System.out.println("done");
     } catch (UnknownHostException u) {
       System.err.println(u.getMessage());
@@ -63,15 +67,16 @@ class FileReceiver extends Peer {
       s = new ServerSocket(port);
       Socket clientSocket = s.accept();
       DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
-      
+
       String fileName = dis.readUTF();
       long fileSize = dis.readLong();
-      
+
       try (FileOutputStream fos = FileManager.getOutputStream(fileName)) {
         byte[] buffer = new byte[4096];
         long totalRead = 0;
         int bytesRead;
-        while (totalRead < fileSize && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize - totalRead))) != -1) {
+        while (totalRead < fileSize
+            && (bytesRead = dis.read(buffer, 0, (int) Math.min(buffer.length, fileSize - totalRead))) != -1) {
           fos.write(buffer, 0, bytesRead);
           totalRead += bytesRead;
         }

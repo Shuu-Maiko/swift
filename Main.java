@@ -21,7 +21,7 @@ public class Main {
         System.err.println("invalid");
       }
     }
-    
+
     scanner.close();
   }
 }
