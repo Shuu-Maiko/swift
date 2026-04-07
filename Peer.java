@@ -34,7 +34,14 @@ class FileSender extends Peer {
       dos.writeUTF(fileName);
       dos.writeLong(fileSize);
       
-      System.out.println(fileName + " " + fileSize);
+      try (FileInputStream fis = FileManager.getInputStream(filePath)) {
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = fis.read(buffer)) != -1) {
+          dos.write(buffer, 0, bytesRead);
+        }
+      }
+      System.out.println("done");
     } catch (UnknownHostException u) {
       System.err.println(u.getMessage());
     } catch (IOException i) {
@@ -60,7 +67,16 @@ class FileReceiver extends Peer {
       String fileName = dis.readUTF();
       long fileSize = dis.readLong();
       
-      System.out.println(fileName + " " + fileSize);
+      try (FileOutputStream fos = FileManager.getOutputStream(fileName)) {
+        byte[] buffer = new byte[4096];
+        long totalRead = 0;
+        int bytesRead;
+        while (totalRead < fileSize && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize - totalRead))) != -1) {
+          fos.write(buffer, 0, bytesRead);
+          totalRead += bytesRead;
+        }
+      }
+      System.out.println("done");
     } catch (IOException i) {
       System.err.println(i.getMessage());
     }
