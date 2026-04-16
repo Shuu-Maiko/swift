@@ -1,3 +1,7 @@
+package com.swift;
+
+import com.swift.core.*;
+import com.swift.utils.FileManager;
 import java.util.Scanner;
 
 public class Main {
@@ -12,16 +16,16 @@ public class Main {
       new FileReceiver(Port).start();
     } else if (role == 2) {
       System.out.print("ip: ");
-      String targetIp = scanner.nextLine().trim();
+      String ip = scanner.nextLine().trim();
       System.out.print("path: ");
       String path = scanner.nextLine().trim();
       if (FileManager.isFileValid(path)) {
-        new FileSender(targetIp, Port, path).start();
+        new FileSender(ip, Port, path).start();
       } else {
         System.err.println("invalid");
       }
     }
-
+    
     scanner.close();
   }
 }
