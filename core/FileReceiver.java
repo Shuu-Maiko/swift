@@ -1,7 +1,7 @@
-package com.swift.core;
+package core;
 
-import com.swift.utils.FileManager;
-import com.swift.interfaces.*;
+import utils.FileManager;
+import interfaces.*;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;

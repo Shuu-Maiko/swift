@@ -1,4 +1,4 @@
-package com.swift.interfaces;
+package interfaces;
 
 public interface IHashable {
     String generateHash(String filePath);

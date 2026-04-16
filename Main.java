@@ -1,7 +1,5 @@
-package com.swift;
-
-import com.swift.core.*;
-import com.swift.utils.FileManager;
+import core.*;
+import utils.FileManager;
 import java.util.Scanner;
 
 public class Main {
