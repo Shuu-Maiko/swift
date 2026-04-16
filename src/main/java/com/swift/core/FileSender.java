@@ -30,29 +30,26 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
       String fileName = FileManager.getFileName(filePath);
       long fileSize = FileManager.getFileSize(filePath);
 
-      // Send Handshake Metadata
       dos.writeUTF(name);
       dos.writeUTF(fileName);
       dos.writeLong(fileSize);
 
-      // Wait for PIN verification from receiver
       String receivedPin = dis.readUTF();
       if (!pin.equals(receivedPin)) {
         System.err.println("Verification failed! PIN mismatch.");
-        dos.writeBoolean(false); // Tell receiver to abort
+        dos.writeBoolean(false);
         return;
       }
-      dos.writeBoolean(true); // Verification success
+      dos.writeBoolean(true);
 
       System.out.println("Handshake successful. Starting transfer...");
       
-      // Calculate and send hash
       String hash = generateHash(filePath);
       dos.writeUTF(hash);
 
       long start = System.nanoTime();
       try (FileInputStream fis = FileManager.getInputStream(filePath)) {
-        byte[] buffer = new byte[65536]; // 64KB Buffer
+        byte[] buffer = new byte[65536];
         int bytesRead;
         long totalSent = 0;
         while ((bytesRead = fis.read(buffer)) != -1) {
@@ -61,7 +58,7 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
           updateProgress(totalSent, fileSize);
         }
       }
-      System.out.println(); // New line after progress bar
+      System.out.println();
       long end = System.nanoTime();
       long duration = (end - start);
       System.out.println("File sent in: " + duration / 1000000 + "ms");
@@ -83,7 +80,7 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
 
   @Override
   public boolean verifyHash(String filePath, String expectedHash) {
-    return false; // Sender doesn't verify
+    return false;
   }
 
   @Override

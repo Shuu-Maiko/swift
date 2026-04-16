@@ -57,7 +57,7 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
       String expectedHash = dis.readUTF();
 
       try (FileOutputStream fos = FileManager.getOutputStream(fileName)) {
-        byte[] buffer = new byte[65536]; // 64KB Buffer
+        byte[] buffer = new byte[65536];
         long totalRead = 0;
         int bytesRead;
         while (totalRead < fileSize
@@ -67,7 +67,7 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
           updateProgress(totalRead, fileSize);
         }
       }
-      System.out.println(); // New line after progress bar
+      System.out.println();
       
       if (verifyHash(fileName, expectedHash)) {
         System.out.println("File integrity verified [SUCCESS]");
@@ -83,7 +83,7 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
 
   @Override
   public String generateHash(String filePath) {
-    return ""; // Receiver doesn't generate for sending
+    return "";
   }
 
   @Override
