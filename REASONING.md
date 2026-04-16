@@ -34,6 +34,7 @@ In many P2P systems, the connection is asynchronous and hidden. Swift makes the 
 Performance in Swift is measured by **Saturation**. Our goal is to saturate the available bandwidth of the local network interface.
 - **Minimizing Context Switches**: Every time the program reads from a socket, the CPU context switches from user-space to kernel-space. By using a 64KB buffer (rather than the Java default of 8KB), we reduce these switches by a factor of 8, significantly improving throughput for large files (GBs).
 - **Zero-Copy Intent**: While Java Sockets don't support true `sendfile` zero-copy easily in a cross-platform way, our streaming implementation avoids any intermediate object allocation within the hot path of the transfer loop.
+- **Boundary Handling**: The transfer loop is designed to be byte-accurate. By using `Math.min` on the receiver and tracking the actual `bytesRead` on the sender, the system correctly handles files smaller than the buffer size (64KB) or files that are not even multiples of the buffer.
 
 ---
 
