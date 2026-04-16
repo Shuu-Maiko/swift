@@ -17,7 +17,7 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
   public void start() {
     try (Scanner scanner = new Scanner(System.in)) {
       s = new ServerSocket(port);
-      System.out.println("Waitng for connection on port " + port + "...");
+      System.out.println("Waiting for connection on port " + port + "...");
       Socket clientSocket = s.accept();
       DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
       DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
