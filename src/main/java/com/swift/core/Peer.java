@@ -3,6 +3,8 @@ package com.swift.core;
 import com.swift.utils.FileManager;
 import java.io.*;
 import java.net.*;
+import java.util.Random;
+import java.util.Scanner;
 
 public abstract class Peer {
   String name;
@@ -30,15 +32,33 @@ class FileSender extends Peer {
   @Override
   public void start() {
     try {
-      s = new Socket(ip, port);
-      long start = System.nanoTime();
+      String pin = String.format("%04d", new Random().nextInt(10000));
+      System.out.println("Pairing PIN: " + pin);
+      System.out.println("Share this code with the receiver.");
 
+      s = new Socket(ip, port);
       DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+      DataInputStream dis = new DataInputStream(s.getInputStream());
+
       String fileName = FileManager.getFileName(filePath);
       long fileSize = FileManager.getFileSize(filePath);
 
+      // Send Handshake Metadata
+      dos.writeUTF(name);
       dos.writeUTF(fileName);
       dos.writeLong(fileSize);
+
+      // Wait for PIN verification from receiver
+      String receivedPin = dis.readUTF();
+      if (!pin.equals(receivedPin)) {
+        System.err.println("Verification failed! PIN mismatch.");
+        dos.writeBoolean(false); // Tell receiver to abort
+        return;
+      }
+      dos.writeBoolean(true); // Verification success
+
+      System.out.println("Handshake successful. Starting transfer...");
+      long start = System.nanoTime();
 
       try (FileInputStream fis = FileManager.getInputStream(filePath)) {
         byte[] buffer = new byte[4096];
@@ -68,13 +88,44 @@ class FileReceiver extends Peer {
 
   @Override
   public void start() {
-    try {
+    try (Scanner scanner = new Scanner(System.in)) {
       s = new ServerSocket(port);
+      System.out.println("Waitng for connection on port " + port + "...");
       Socket clientSocket = s.accept();
       DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+      DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
 
+      String senderName = dis.readUTF();
       String fileName = dis.readUTF();
       long fileSize = dis.readLong();
+
+      System.out.println("\n--- Incoming Transfer ---");
+      System.out.println("From: " + senderName);
+      System.out.println("File: " + fileName);
+      System.out.println("Size: " + (fileSize / 1024) + " KB");
+      System.out.print("\nAccept this transfer? (y/n): ");
+      
+      String choice = scanner.nextLine().trim().toLowerCase();
+      if (!choice.equals("y")) {
+        System.out.println("Transfer rejected.");
+        clientSocket.close();
+        s.close();
+        return;
+      }
+
+      System.out.print("Enter the 4-digit PIN from " + senderName + ": ");
+      String enteredPin = scanner.nextLine().trim();
+      dos.writeUTF(enteredPin);
+
+      boolean verified = dis.readBoolean();
+      if (!verified) {
+        System.err.println("Verification failed! PIN is incorrect. Aborting.");
+        clientSocket.close();
+        s.close();
+        return;
+      }
+
+      System.out.println("Verification success. Starting download...");
 
       try (FileOutputStream fos = FileManager.getOutputStream(fileName)) {
         byte[] buffer = new byte[4096];
