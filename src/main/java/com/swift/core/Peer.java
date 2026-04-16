@@ -5,10 +5,12 @@ import java.io.*;
 import java.net.*;
 
 public abstract class Peer {
+  String name;
   String ip;
   int port;
 
-  public Peer(String ip, int port) {
+  public Peer(String name, String ip, int port) {
+    this.name = name;
     this.ip = ip;
     this.port = port;
   }
@@ -20,8 +22,8 @@ class FileSender extends Peer {
   Socket s;
   String filePath;
 
-  public FileSender(String targetIp, int port, String filePath) {
-    super(targetIp, port);
+  public FileSender(String userName, String targetIp, int port, String filePath) {
+    super(userName, targetIp, port);
     this.filePath = filePath;
   }
 
@@ -60,8 +62,8 @@ class FileSender extends Peer {
 class FileReceiver extends Peer {
   ServerSocket s;
 
-  public FileReceiver(int port) {
-    super("localhost", port);
+  public FileReceiver(String userName, int port) {
+    super(userName, "localhost", port);
   }
 
   @Override
