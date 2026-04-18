@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class FileSender extends Peer implements IHashable, IProgressTrackable {
+  public static final int BUFFER_SIZE = 65536;
   Socket s;
   String filePath;
 
@@ -49,7 +50,7 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
 
       long start = System.nanoTime();
       try (FileInputStream fis = FileManager.getInputStream(filePath)) {
-        byte[] buffer = new byte[65536];
+        byte[] buffer = new byte[BUFFER_SIZE];
         int bytesRead;
         long totalSent = 0;
         while ((bytesRead = fis.read(buffer)) != -1) {

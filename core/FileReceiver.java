@@ -7,6 +7,7 @@ import java.net.*;
 import java.util.Scanner;
 
 public class FileReceiver extends Peer implements IHashable, IProgressTrackable {
+  public static final int BUFFER_SIZE = 65536;
   ServerSocket s;
 
   public FileReceiver(String userName, int port) {
@@ -57,7 +58,7 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
       String expectedHash = dis.readUTF();
 
       try (FileOutputStream fos = FileManager.getOutputStream(fileName)) {
-        byte[] buffer = new byte[65536];
+        byte[] buffer = new byte[BUFFER_SIZE];
         long totalRead = 0;
         int bytesRead;
         while (totalRead < fileSize
