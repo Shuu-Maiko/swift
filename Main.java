@@ -7,7 +7,7 @@ public class Main {
     Scanner scanner = new Scanner(System.in);
     System.out.print("Enter your name: ");
     String userName = scanner.nextLine().trim();
-    System.out.print("1: receiver, 2: sender: ");
+    System.out.print("1: receiver, 2: sender, 3: folder receiver, 4: folder sender: ");
     int role = scanner.nextInt();
     scanner.nextLine();
     int Port = 8888;
@@ -24,8 +24,21 @@ public class Main {
       } else {
         System.err.println("invalid");
       }
+    } else if (role == 3) {
+      new FolderReceiver(userName, Port).start();
+    } else if (role == 4) {
+      System.out.print("ip: ");
+      String ip = scanner.nextLine().trim();
+      System.out.print("folder path: ");
+      String path = scanner.nextLine().trim();
+      java.io.File folder = new java.io.File(path);
+      if (folder.exists() && folder.isDirectory()) {
+        new FolderSender(userName, ip, Port, path).start();
+      } else {
+        System.err.println("invalid folder");
+      }
     }
-    
+
     scanner.close();
   }
 }
