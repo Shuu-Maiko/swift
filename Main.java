@@ -1,16 +1,24 @@
 import core.*;
 import utils.FileManager;
+import loggers.*;
 import java.util.Scanner;
 
 public class Main {
   public static void main(String[] args) {
+    initializeLoggers();
+
     Scanner scanner = new Scanner(System.in);
     System.out.print("Enter your name: ");
+
     String userName = scanner.nextLine().trim();
-    System.out.print("1: file receiver, 2: file sender, 3: folder receiver, 4: folder sender: ");
+
+    System.out.println("\n--- Main Menu ---");
+    System.out.print("1: file receiver, 2: file sender, 3: folder receiver, 4: folder sender, 5: view stats, 6: clear logs: ");
+
     int role = scanner.nextInt();
     scanner.nextLine();
     int Port = 8888;
+
     if (role == 1) {
       new FileReceiver(userName, Port).start();
     } else if (role == 2) {
@@ -36,8 +44,22 @@ public class Main {
       } else {
         System.err.println("invalid folder");
       }
+    } else if (role == 5) {
+      LogManager.getInstance().printStatistics();
+    } else if (role == 6) {
+      System.out.print("Are you sure you want to clear all logs? (y/n): ");
+      if (scanner.nextLine().trim().toLowerCase().equals("y")) {
+        LogManager.getInstance().clearAllLogs();
+      }
     }
 
     scanner.close();
+  }
+
+  private static void initializeLoggers() {
+    LogManager logManager = LogManager.getInstance();
+    logManager.registerLogger(new ConsoleLogger());
+    logManager.registerLogger(new FileLogger("transfer_logs.csv", true));
+    System.out.println("Loggers initialized: ConsoleLogger and FileLogger (CSV format)");
   }
 }

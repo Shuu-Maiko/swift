@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(javac -d . interfaces/*.java loggers/*.java core/*.java Main.java)",
+      "Bash(git add *)"
+    ]
+  }
+}

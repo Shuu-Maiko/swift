@@ -2,6 +2,7 @@ package core;
 
 import utils.FileManager;
 import interfaces.*;
+import loggers.LogManager;
 import java.io.*;
 import java.net.*;
 import java.util.Random;
@@ -19,6 +20,12 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
 
   @Override
   public void start() {
+    String fileName = FileManager.getFileName(filePath);
+    long fileSize = FileManager.getFileSize(filePath);
+    long startTime = System.nanoTime();
+    boolean transferSuccess = false;
+    String errorMessage = null;
+
     try {
       String pin = String.format("%04d", new Random().nextInt(10000));
       System.out.println("Pairing PIN: " + pin);
@@ -28,9 +35,6 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
       DataOutputStream dos = new DataOutputStream(s.getOutputStream());
       DataInputStream dis = new DataInputStream(s.getInputStream());
 
-      String fileName = FileManager.getFileName(filePath);
-      long fileSize = FileManager.getFileSize(filePath);
-
       dos.writeUTF(name);
       dos.writeUTF(fileName);
       dos.writeLong(fileSize);
@@ -39,16 +43,16 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
       if (!pin.equals(receivedPin)) {
         System.err.println("Verification failed! PIN mismatch.");
         dos.writeBoolean(false);
+        errorMessage = "PIN mismatch";
         return;
       }
       dos.writeBoolean(true);
 
       System.out.println("Handshake successful. Starting transfer...");
-      
+
       String hash = generateHash(filePath);
       dos.writeUTF(hash);
 
-      long start = System.nanoTime();
       try (FileInputStream fis = FileManager.getInputStream(filePath)) {
         byte[] buffer = new byte[BUFFER_SIZE];
         int bytesRead;
@@ -60,12 +64,15 @@ public class FileSender extends Peer implements IHashable, IProgressTrackable {
         }
       }
       System.out.println();
-      long end = System.nanoTime();
-      long duration = (end - start);
-      System.out.println("File sent in: " + duration / 1000000 + "ms");
+      transferSuccess = true;
+      System.out.println("File sent in: " + (System.nanoTime() - startTime) / 1000000 + "ms");
       System.out.println("Done.");
     } catch (Exception e) {
       System.err.println("Error: " + e.getMessage());
+      errorMessage = e.getMessage();
+    } finally {
+      long duration = System.nanoTime() - startTime;
+      LogManager.getInstance().logTransfer(name, "Unknown", fileName, fileSize, duration, transferSuccess, "FILE", errorMessage);
     }
   }
 

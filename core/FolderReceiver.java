@@ -2,6 +2,7 @@ package core;
 
 import utils.FileManager;
 import interfaces.*;
+import loggers.LogManager;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
@@ -15,6 +16,13 @@ public class FolderReceiver extends Peer implements IProgressTrackable, IHashabl
 
   @Override
   public void start() {
+    long startTime = System.nanoTime();
+    String senderName = null;
+    String folderName = null;
+    long totalSize = 0;
+    boolean transferSuccess = false;
+    String errorMessage = null;
+
     try (Scanner scanner = new Scanner(System.in);
         ServerSocket server = new ServerSocket(port)) {
       System.out.println("Folder mode: waiting for connection on port " + port + "...");
@@ -22,8 +30,8 @@ public class FolderReceiver extends Peer implements IProgressTrackable, IHashabl
       DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
       DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
 
-      String senderName = dis.readUTF();
-      String folderName = dis.readUTF();
+      senderName = dis.readUTF();
+      folderName = dis.readUTF();
       int fileCount = dis.readInt();
 
       System.out.println("\n--- Incoming Transfer ---");
@@ -35,6 +43,7 @@ public class FolderReceiver extends Peer implements IProgressTrackable, IHashabl
       String choice = scanner.nextLine().trim().toLowerCase();
       if (!choice.equals("y")) {
         System.out.println("Transfer rejected.");
+        errorMessage = "Transfer rejected by receiver";
         clientSocket.close();
         return;
       }
@@ -46,6 +55,7 @@ public class FolderReceiver extends Peer implements IProgressTrackable, IHashabl
       boolean verified = dis.readBoolean();
       if (!verified) {
         System.err.println("Verification failed! PIN is incorrect. Aborting.");
+        errorMessage = "PIN verification failed";
         clientSocket.close();
         return;
       }
@@ -60,6 +70,7 @@ public class FolderReceiver extends Peer implements IProgressTrackable, IHashabl
       for (int i = 0; i < fileCount; i++) {
         String fileName = dis.readUTF();
         long fileSize = dis.readLong();
+        totalSize += fileSize;
 
         System.out.println("\n[" + (i + 1) + "/" + fileCount + "] " + fileName);
         File outFile = new File(outDir, fileName);
@@ -76,8 +87,15 @@ public class FolderReceiver extends Peer implements IProgressTrackable, IHashabl
         }
       }
       System.out.println("\nDone.");
+      transferSuccess = true;
     } catch (Exception e) {
       System.err.println("Error: " + e.getMessage());
+      errorMessage = e.getMessage();
+    } finally {
+      long duration = System.nanoTime() - startTime;
+      if (senderName != null && folderName != null) {
+        LogManager.getInstance().logTransfer(senderName, name, folderName, totalSize, duration, transferSuccess, "FOLDER", errorMessage);
+      }
     }
   }
 

@@ -2,6 +2,7 @@ package core;
 
 import utils.FileManager;
 import interfaces.*;
+import loggers.LogManager;
 import java.io.*;
 import java.net.*;
 import java.util.Random;
@@ -24,6 +25,11 @@ public class FolderSender extends Peer implements IProgressTrackable, IHashable 
       return;
     }
 
+    long startTime = System.nanoTime();
+    boolean transferSuccess = false;
+    String errorMessage = null;
+    long totalSize = 0;
+
     try {
       String pin = String.format("%04d", new Random().nextInt(10000));
       System.out.println("Pairing PIN: " + pin);
@@ -42,17 +48,17 @@ public class FolderSender extends Peer implements IProgressTrackable, IHashable 
         System.err.println("Verification failed! PIN mismatch.");
         dos.writeBoolean(false);
         s.close();
+        errorMessage = "PIN mismatch";
         return;
       }
       dos.writeBoolean(true);
 
       System.out.println("Handshake successful. Starting transfer...");
 
-      long start = System.nanoTime();
-
       for (int i = 0; i < files.length; i++) {
         File f = files[i];
         long size = f.length();
+        totalSize += size;
         dos.writeUTF(f.getName());
         dos.writeLong(size);
 
@@ -69,14 +75,17 @@ public class FolderSender extends Peer implements IProgressTrackable, IHashable 
         }
       }
 
-      long end = System.nanoTime();
-      long duration = (end - start);
       System.out.println();
-      System.out.println("Folder sent in: " + duration / 1000000 + "ms");
+      System.out.println("Folder sent in: " + (System.nanoTime() - startTime) / 1000000 + "ms");
       System.out.println("Done.");
+      transferSuccess = true;
       s.close();
     } catch (Exception e) {
       System.err.println("Error: " + e.getMessage());
+      errorMessage = e.getMessage();
+    } finally {
+      long duration = System.nanoTime() - startTime;
+      LogManager.getInstance().logTransfer(name, "Unknown", folder.getName(), totalSize, duration, transferSuccess, "FOLDER", errorMessage);
     }
   }
 

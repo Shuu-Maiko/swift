@@ -2,6 +2,7 @@ package core;
 
 import utils.FileManager;
 import interfaces.*;
+import loggers.LogManager;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
@@ -16,6 +17,13 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
 
   @Override
   public void start() {
+    long startTime = System.nanoTime();
+    String senderName = null;
+    String fileName = null;
+    long fileSize = 0;
+    boolean transferSuccess = false;
+    String errorMessage = null;
+
     try (Scanner scanner = new Scanner(System.in)) {
       s = new ServerSocket(port);
       System.out.println("Waiting for connection on port " + port + "...");
@@ -23,19 +31,20 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
       DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
       DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
 
-      String senderName = dis.readUTF();
-      String fileName = dis.readUTF();
-      long fileSize = dis.readLong();
+      senderName = dis.readUTF();
+      fileName = dis.readUTF();
+      fileSize = dis.readLong();
 
       System.out.println("\n--- Incoming Transfer ---");
       System.out.println("From: " + senderName);
       System.out.println("File: " + fileName);
       System.out.println("Size: " + (fileSize / 1024) + " KB");
       System.out.print("\nAccept this transfer? (y/n): ");
-      
+
       String choice = scanner.nextLine().trim().toLowerCase();
       if (!choice.equals("y")) {
         System.out.println("Transfer rejected.");
+        errorMessage = "Transfer rejected by receiver";
         clientSocket.close();
         s.close();
         return;
@@ -48,6 +57,7 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
       boolean verified = dis.readBoolean();
       if (!verified) {
         System.err.println("Verification failed! PIN is incorrect. Aborting.");
+        errorMessage = "PIN verification failed";
         clientSocket.close();
         s.close();
         return;
@@ -69,16 +79,24 @@ public class FileReceiver extends Peer implements IHashable, IProgressTrackable 
         }
       }
       System.out.println();
-      
+
       if (verifyHash(fileName, expectedHash)) {
         System.out.println("File integrity verified [SUCCESS]");
+        transferSuccess = true;
       } else {
         System.err.println("File integrity check [FAILED] - Corrupted transfer");
+        errorMessage = "Hash verification failed";
       }
-      
+
       System.out.println("Done.");
     } catch (Exception e) {
       System.err.println("Error: " + e.getMessage());
+      errorMessage = e.getMessage();
+    } finally {
+      long duration = System.nanoTime() - startTime;
+      if (senderName != null && fileName != null) {
+        LogManager.getInstance().logTransfer(senderName, name, fileName, fileSize, duration, transferSuccess, "FILE", errorMessage);
+      }
     }
   }
 
