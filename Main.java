@@ -12,8 +12,10 @@ public class Main {
 
     String userName = scanner.nextLine().trim();
 
-    System.out.println("\n--- Main Menu ---");
-    System.out.print("1: file receiver, 2: file sender, 3: folder receiver, 4: folder sender, 5: view stats, 6: clear logs: ");
+    System.out.println("\nMain Menu");
+    System.out.print(
+        
+        "1: file receiver, 2: file sender, 3: folder receiver, 4: folder sender, 5: view stats, 6: clear logs: ");
 
     int role = scanner.nextInt();
     scanner.nextLine();
@@ -59,7 +61,11 @@ public class Main {
   private static void initializeLoggers() {
     LogManager logManager = LogManager.getInstance();
     logManager.registerLogger(new ConsoleLogger());
-    logManager.registerLogger(new FileLogger("transfer_logs.csv", true));
+    try {
+      logManager.registerLogger(new FileLogger("transfer_logs.csv", true));
+    } catch (Exception e) {
+      System.err.println("Failed to initialize FileLogger: " + e.getMessage());
+    }
     System.out.println("Loggers initialized: ConsoleLogger and FileLogger (CSV format)");
   }
 }
