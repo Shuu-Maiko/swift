@@ -1,10 +1,12 @@
 package core;
 
-import interfaces.IProgressTrackable;
+import utils.FileManager;
+import interfaces.*;
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
-public class FolderReceiver extends Peer implements IProgressTrackable {
+public class FolderReceiver extends Peer implements IProgressTrackable, IHashable {
   public static final int BUFFER_SIZE = 65536;
 
   public FolderReceiver(String userName, int port) {
@@ -13,14 +15,42 @@ public class FolderReceiver extends Peer implements IProgressTrackable {
 
   @Override
   public void start() {
-    try (ServerSocket server = new ServerSocket(port)) {
+    try (Scanner scanner = new Scanner(System.in);
+        ServerSocket server = new ServerSocket(port)) {
       System.out.println("Folder mode: waiting for connection on port " + port + "...");
       Socket clientSocket = server.accept();
       DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+      DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
 
       String senderName = dis.readUTF();
       String folderName = dis.readUTF();
       int fileCount = dis.readInt();
+
+      System.out.println("\n--- Incoming Transfer ---");
+      System.out.println("From: " + senderName);
+      System.out.println("Folder: " + folderName);
+      System.out.println("Files: " + fileCount);
+      System.out.print("\nAccept this transfer? (y/n): ");
+
+      String choice = scanner.nextLine().trim().toLowerCase();
+      if (!choice.equals("y")) {
+        System.out.println("Transfer rejected.");
+        clientSocket.close();
+        return;
+      }
+
+      System.out.print("Enter the 4-digit PIN from " + senderName + ": ");
+      String enteredPin = scanner.nextLine().trim();
+      dos.writeUTF(enteredPin);
+
+      boolean verified = dis.readBoolean();
+      if (!verified) {
+        System.err.println("Verification failed! PIN is incorrect. Aborting.");
+        clientSocket.close();
+        return;
+      }
+
+      System.out.println("Verification success. Starting download...");
 
       File outDir = new File(folderName);
       outDir.mkdirs();
@@ -55,5 +85,21 @@ public class FolderReceiver extends Peer implements IProgressTrackable {
   public void updateProgress(long current, long total) {
     int percent = (int) ((current * 100) / total);
     System.out.print("\rReceiving: [" + "#".repeat(percent / 10) + " ".repeat(10 - percent / 10) + "] " + percent + "%");
+  }
+
+  @Override
+  public String generateHash(String filePath) {
+    return "";
+  }
+
+  @Override
+  public boolean verifyHash(String filePath, String expectedHash) {
+    try {
+      System.out.println("Verifying file integrity...");
+      String actualHash = FileManager.calculateSHA256(filePath);
+      return actualHash.equalsIgnoreCase(expectedHash);
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

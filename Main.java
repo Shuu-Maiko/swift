@@ -7,11 +7,10 @@ public class Main {
     Scanner scanner = new Scanner(System.in);
     System.out.print("Enter your name: ");
     String userName = scanner.nextLine().trim();
-    System.out.print("1: receiver, 2: sender, 3: folder receiver, 4: folder sender: ");
+    System.out.print("1: file receiver, 2: file sender, 3: folder receiver, 4: folder sender: ");
     int role = scanner.nextInt();
     scanner.nextLine();
     int Port = 8888;
-
     if (role == 1) {
       new FileReceiver(userName, Port).start();
     } else if (role == 2) {
